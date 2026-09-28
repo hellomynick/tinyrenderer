@@ -1,5 +1,7 @@
 #include "tgaimage.h"
 #include <cmath>
+#include <cstdlib>
+#include <ctime>
 
 constexpr TGAColor white = {255, 255, 255, 255}; // attention, BGRA order
 constexpr TGAColor green = {0, 255, 0, 255};
@@ -9,11 +11,35 @@ constexpr TGAColor yellow = {0, 200, 255, 255};
 
 void line(int ax, int ay, int bx, int by, TGAImage &framebuffer,
           TGAColor color) {
-  for (float t = 0.; t < 1.; t += .02) {
-    int x = std::round(ax + (bx - ax) * t);
-    int y = std::round(ay + (by - ay) * t);
-    framebuffer.set(x, y, color);
+  bool steel = std::abs(bx - ax) < std::abs(by - ay);
+  if (steel) {
+    std::swap(ax, ay);
+    std::swap(bx, by);
   }
+  if (ax > bx) {
+    std::swap(ax, bx);
+    std::swap(ay, by);
+  }
+
+  float y = ay;
+  float slope = (by - ay) / static_cast<float>(bx - ax);
+
+  for (int x = ax; x <= bx; x++) {
+    int yi = std::round(y);
+
+    if (steel) {
+      framebuffer.set(yi, x, color);
+    } else {
+      framebuffer.set(x, yi, color);
+    }
+    y += slope;
+  }
+}
+
+TGAColor random_color() {
+  auto b = [] { return static_cast<std::uint8_t>(rand() % 255); };
+
+  return TGAColor{b(), b(), b(), b()};
 }
 
 int main(int argc, char **argv) {
